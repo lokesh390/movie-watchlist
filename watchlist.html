@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Watchlist</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>My Watchlist</h1>
+    <div id="watchlist-container" class="movie-list"></div>
+
+    <p><a href="index.html">Back to Search</a></p>
+
+    <script>
+        const apiKey = "8b4bdc21"; 
+        const container = document.getElementById("watchlist-container");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadWatchlist();
+        });
+
+        async function loadWatchlist() {
+            const watchlist = JSON.parse(localStorage.getItem("watchlist")) || [];
+
+            if (watchlist.length === 0) {
+                container.innerHTML = "<p style='text-align:center;'>Your watchlist is empty.</p>";
+                return;
+            }
+
+            for (const imdbID of watchlist) {
+                const movie = await fetchMovieDetails(imdbID);
+                if (movie) {
+                    renderMovieCard(movie);
+                }
+            }
+        }
+
+        async function fetchMovieDetails(imdbID) {
+            try {
+                const res = await fetch(`https://www.omdbapi.com/?i=${imdbID}&apikey=${apiKey}`);
+                const data = await res.json();
+                return data.Response === "True" ? data : null;
+            } catch (err) {
+                console.error("Error fetching movie:", err);
+                return null;
+            }
+        }
+
+        function renderMovieCard(movie) {
+            const card = document.createElement("div");
+            card.classList.add("movie-card");
+
+            card.innerHTML = `
+                <img src="${movie.Poster !== "N/A" ? movie.Poster : 'https://via.placeholder.com/150'}" alt="${movie.Title}" width="150">
+                <h3>${movie.Title}</h3>
+                <p>Year: ${movie.Year}</p>
+                <button onclick="removeFromWatchlist('${movie.imdbID}', this)">Remove</button>
+            `;
+            container.appendChild(card);
+        }
+
+        function removeFromWatchlist(imdbID, button) {
+            let watchlist = JSON.parse(localStorage.getItem("watchlist")) || [];
+            watchlist = watchlist.filter(id => id !== imdbID);
+            localStorage.setItem("watchlist", JSON.stringify(watchlist));
+
+            
+            button.parentElement.remove();
+
+            if (watchlist.length === 0) {
+                container.innerHTML = "<p style='text-align:center;'>Your watchlist is empty.</p>";
+            }
+        }
+    </script>
+</body>
+</html>
